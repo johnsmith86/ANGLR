@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 
 private val Navy = Color(0xFF071A2D)
-private val Sea = Color(0xFF0B8E9A)
+private val Sea = Color(0xFF00C8D7)
 private val Aqua = Color(0xFF65D7C5)
 private val Sand = Color(0xFFF3F6F7)
 private val Ink = Color(0xFF10283B)
@@ -52,13 +52,18 @@ fun AnglrHome(locationGranted: Boolean, askLocation: () -> Unit) {
                 item {
                     Column(Modifier.fillMaxWidth().background(Navy).padding(22.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Waves, null, tint = Aqua, modifier = Modifier.size(30.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("ANGLR", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                            Box(Modifier.size(42.dp).background(Color(0xFF0E3447), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Waves, null, tint = Aqua, modifier = Modifier.size(30.dp))
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text("ANGLR", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                                Text("FISHING INTELLIGENCE", color = Aqua, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            }
                             Spacer(Modifier.weight(1f))
                             Text("BETA", color = Aqua, style = MaterialTheme.typography.labelMedium)
                         }
-                        Spacer(Modifier.height(22.dp))
+                        Spacer(Modifier.height(24.dp))
                         Text("READ THE WATER.", color = Aqua, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         Text("Find your next bite.", color = Color.White, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(8.dp))
@@ -105,11 +110,11 @@ fun AnglrHome(locationGranted: Boolean, askLocation: () -> Unit) {
                     }
                 }
             }
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
-                NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.Map, null) }, label = { Text("Spots") })
-                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Waves, null) }, label = { Text("Tides") })
-                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.MenuBook, null) }, label = { Text("Guide") })
+            NavigationBar(containerColor = Navy) {
+                NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = Aqua, selectedTextColor = Aqua, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray))
+                NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.Map, null) }, label = { Text("Spots") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = Aqua, selectedTextColor = Aqua, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray))
+                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Waves, null) }, label = { Text("Tides") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = Aqua, selectedTextColor = Aqua, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray))
+                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.MenuBook, null) }, label = { Text("Guide") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = Aqua, selectedTextColor = Aqua, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray))
             }
         }
     }

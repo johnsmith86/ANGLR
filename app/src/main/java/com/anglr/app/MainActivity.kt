@@ -149,6 +149,12 @@ fun HomeScreen(location: Location?, hasLocation: Boolean, askLocation: () -> Uni
             Text("Use the tabs below to load live local data.", color = Color.Gray)
         }
         Panel {
+            val phase = moonPhase(Date())
+            Text("MOON PHASE", fontWeight = FontWeight.Bold, color = Ink)
+            Text("${phase.first} · ${phase.second} illuminated", color = Sea, fontWeight = FontWeight.SemiBold)
+            Text("Lunar timing is a planning signal, not a guarantee of fish activity.", color = Color.Gray)
+        }
+        Panel {
             Text("LIVE FISHING INTEL", fontWeight = FontWeight.Bold, color = Ink)
             listOf("Nearby fishing spots" to 1, "Tide predictions" to 2, "Live weather & marine forecast" to 3, "Species, bait & rig guide" to 4, "Fishing reports" to 5).forEach { (name, page) ->
                 Row(Modifier.fillMaxWidth().clickable { onTab(page) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -165,6 +171,25 @@ fun HomeScreen(location: Location?, hasLocation: Boolean, askLocation: () -> Uni
     }
 }
 
+fun moonPhase(date: Date): Pair<String, String> {
+    val synodicMonth = 29.530588853
+    val newMoonEpoch = 947182440000L
+    val age = ((date.time - newMoonEpoch) / 86400000.0 % synodicMonth + synodicMonth) % synodicMonth
+    val fraction = age / synodicMonth
+    val illumination = (50.0 * (1.0 - cos(2.0 * PI * fraction))).roundToInt()
+    val phaseName = when {
+        fraction < 0.03 || fraction > 0.97 -> "New moon"
+        fraction < 0.22 -> "Waxing crescent"
+        fraction < 0.28 -> "First quarter"
+        fraction < 0.47 -> "Waxing gibbous"
+        fraction < 0.53 -> "Full moon"
+        fraction < 0.72 -> "Waning gibbous"
+        fraction < 0.78 -> "Last quarter"
+        else -> "Waning crescent"
+    }
+    return phaseName to "$illumination%"
+}
+
 @Composable
 fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (String)->Unit, setLon: (String)->Unit, askLocation: ()->Unit) {
     var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
@@ -173,6 +198,7 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
     val favorites = remember { context.getSharedPreferences("anglr_favorites", Context.MODE_PRIVATE) }
+    var favoritesTick by remember { mutableIntStateOf(0) }
     val lat = latText.toDoubleOrNull()
     val lon = lonText.toDoubleOrNull()
     Page("Fishing spots", "Nearby piers, boat ramps, beaches and fishing access") {
@@ -199,7 +225,7 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
                 Text("%.1f km away".format(Locale.getDefault(), spot.distance / 1000.0), color = Color.Gray)
                 Text("%.5f, %.5f".format(Locale.US, spot.lat, spot.lon), color = Color.Gray)
                 val favoriteKey = "${spot.name}|${spot.lat}|${spot.lon}"
-                val saved = favorites.getStringSet("spots", emptySet())?.contains(favoriteKey) == true
+                val saved = favoritesTick >= 0 && favorites.getStringSet("spots", emptySet())?.contains(favoriteKey) == true
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = {
                         val current = favorites.getStringSet("spots", emptySet())?.toMutableSet() ?: mutableSetOf()

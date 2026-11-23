@@ -104,12 +104,13 @@ fun AnglrApp(location: Location?, hasLocation: Boolean, askLocation: () -> Unit,
                     2 -> TidesScreen(location, latText, lonText, { latText = it }, { lonText = it })
                     3 -> WeatherScreen(location)
                     4 -> GuideScreen()
-                    else -> ReportsScreen()
+                    5 -> ReportsScreen()
+                    else -> FavoritesScreen()
                 }
             }
             NavigationBar(containerColor = Navy) {
-                val labels = listOf("Home", "Spots", "Tides", "Weather", "Guide", "Reports")
-                val icons = listOf(Icons.Default.Home, Icons.Default.Map, Icons.Default.Waves, Icons.Default.Cloud, Icons.Default.MenuBook, Icons.Default.Article)
+                val labels = listOf("Home", "Spots", "Tides", "Weather", "Guide", "Reports", "Saved")
+                val icons = listOf(Icons.Default.Home, Icons.Default.Map, Icons.Default.Waves, Icons.Default.Cloud, Icons.Default.MenuBook, Icons.Default.Article, Icons.Default.Favorite)
                 labels.forEachIndexed { i, label ->
                     NavigationBarItem(selected = tab == i, onClick = { tab = i }, icon = { Icon(icons[i], null) }, label = { Text(label, maxLines = 1) },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = Aqua, selectedTextColor = Aqua, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray))
@@ -259,6 +260,37 @@ fun fetchSpots(lat: Double, lon: Double): List<Spot> {
         result.add(Spot(name, tags.optString("leisure", tags.optString("man_made", "Fishing access")), slat, slon, out[0].toDouble()))
     }
     return result.distinctBy { "${it.name}:${it.lat}:${it.lon}" }.sortedBy { it.distance }.take(60)
+}
+
+@Composable
+fun FavoritesScreen() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("anglr_favorites", Context.MODE_PRIVATE) }
+    var tick by remember { mutableIntStateOf(0) }
+    val saved = remember(tick) { prefs.getStringSet("spots", emptySet())?.toList()?.sorted() ?: emptyList() }
+    Page("Saved fishing spots", "Your personal fishing locations") {
+        if (saved.isEmpty()) Panel {
+            Text("No saved spots yet", fontWeight = FontWeight.Bold, color = Ink)
+            Text("Go to Spots, search nearby and tap Save spot. Your saved locations will appear here.", color = Color.Gray)
+        }
+        saved.forEach { key ->
+            val parts = key.split("|")
+            if (parts.size >= 3) {
+                val name = parts[0]; val lat = parts[1].toDoubleOrNull(); val lon = parts[2].toDoubleOrNull()
+                Panel {
+                    Text(name, fontWeight = FontWeight.Bold, color = Ink)
+                    if (lat != null && lon != null) Text("%.5f, %.5f".format(Locale.US, lat, lon), color = Color.Gray)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(enabled = lat != null && lon != null, onClick = {
+                            val uri = Uri.parse("geo:$lat,$lon?q=$lat,$lon")
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lon")))
+                        }) { Text("Directions") }
+                        OutlinedButton(onClick = { val set = prefs.getStringSet("spots", emptySet())?.toMutableSet() ?: mutableSetOf(); set.remove(key); prefs.edit().putStringSet("spots", set).apply(); tick++ }) { Text("Remove") }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

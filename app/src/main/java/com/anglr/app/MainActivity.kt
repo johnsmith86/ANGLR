@@ -87,7 +87,7 @@ fun AnglrApp(location: Location?, hasLocation: Boolean, askLocation: () -> Unit,
         if (location != null) { latText = location.latitude.toString(); lonText = location.longitude.toString() }
     }
     Surface(Modifier.fillMaxSize(), color = Sand) {
-        Column {
+        Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().background(Navy).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Waves, null, tint = Aqua, modifier = Modifier.size(32.dp))
                 Spacer(Modifier.width(10.dp))
@@ -95,13 +95,15 @@ fun AnglrApp(location: Location?, hasLocation: Boolean, askLocation: () -> Unit,
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = refreshLocation) { Icon(Icons.Default.MyLocation, "Refresh location", tint = Color.White) }
             }
-            when (tab) {
-                0 -> HomeScreen(location, hasLocation, askLocation, onTab = { tab = it })
-                1 -> SpotsScreen(location, latText, lonText, { latText = it }, { lonText = it }, askLocation)
-                2 -> TidesScreen(location, latText, lonText, { latText = it }, { lonText = it })
-                3 -> WeatherScreen(location)
-                4 -> GuideScreen()
-                else -> ReportsScreen()
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                when (tab) {
+                    0 -> HomeScreen(location, hasLocation, askLocation, onTab = { tab = it })
+                    1 -> SpotsScreen(location, latText, lonText, { latText = it }, { lonText = it }, askLocation)
+                    2 -> TidesScreen(location, latText, lonText, { latText = it }, { lonText = it })
+                    3 -> WeatherScreen(location)
+                    4 -> GuideScreen()
+                    else -> ReportsScreen()
+                }
             }
             NavigationBar(containerColor = Navy) {
                 val labels = listOf("Home", "Spots", "Tides", "Weather", "Guide", "Reports")
@@ -298,10 +300,10 @@ fun GuideScreen() {
     var species by remember { mutableStateOf("Snapper") }
     val advice = when (species) {
         "Flathead" -> "Soft plastics (3–4 inch) or pilchard strips. 6–10 lb braid, 10–15 lb leader, 1/8–1/4 oz jighead. Work sandy edges and channels with slow hops."
-        "Kingfish" -> "Live squid or slimy mackerel, or stickbaits. 30–60 lb braid and 40–80 lb leader depending on structure. Use a running sinker or live-bait rig."
-        "Bream" -> "Prawn, yabbies or 2–3 inch soft plastics. 4–8 lb braid, 4–8 lb leader, size 1–4 hooks or 1/16–1/12 oz jigheads. Fish structure and drains."
-        "Whiting" -> "Pipis, worms or mussel on a size 4–6 long-shank hook, light running sinker, 4–8 lb line. Fish sand holes and shallow channels."
-        else -> "Pilchard, squid or fresh bait on a paternoster or running sinker rig. 10–20 lb main line, 20–30 lb leader, 4/0–6/0 circle hooks. Fish reef, channels and current lines."
+        "Kingfish" -> "Live squid or slimy mackerel, or stickbaits. 30–60 lb braid and 40–60 lb leader. Look for current lines, bait schools and structure."
+        "Bream" -> "Small soft plastics, worms or prawn. 4–6 lb braid, 6–8 lb leader. Target structure, weed edges and snags with light jigheads."
+        "Whiting" -> "Worms, pipis or small soft plastics. 4–6 lb braid, light leader. Drift or cast onto sand flats and channels."
+        else -> "Soft plastics, pilchards or squid strips. 8–15 lb braid, 12–20 lb leader. Fish structure, reefs, channels and current lines."
     }
     Page("Tackle & rig guide", "Practical starting setups — adjust to local rules and conditions") {
         Panel {

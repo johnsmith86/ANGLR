@@ -2,6 +2,8 @@ package com.anglr.app
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
@@ -169,6 +171,8 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
     var status by remember { mutableStateOf("Enter coordinates or enable GPS, then search.") }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val favorites = remember { context.getSharedPreferences("anglr_favorites", Context.MODE_PRIVATE) }
     val lat = latText.toDoubleOrNull()
     val lon = lonText.toDoubleOrNull()
     Page("Fishing spots", "Nearby piers, boat ramps, beaches and fishing access") {
@@ -194,6 +198,21 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
                 Text(spot.type, color = Sea)
                 Text("%.1f km away".format(Locale.getDefault(), spot.distance / 1000.0), color = Color.Gray)
                 Text("%.5f, %.5f".format(Locale.US, spot.lat, spot.lon), color = Color.Gray)
+                val favoriteKey = "${spot.name}|${spot.lat}|${spot.lon}"
+                val saved = favorites.getStringSet("spots", emptySet())?.contains(favoriteKey) == true
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        val current = favorites.getStringSet("spots", emptySet())?.toMutableSet() ?: mutableSetOf()
+                        if (saved) current.remove(favoriteKey) else current.add(favoriteKey)
+                        favorites.edit().putStringSet("spots", current).apply()
+                    }) { Text(if (saved) "★ Saved" else "☆ Save spot") }
+                    Button(onClick = {
+                        val uri = Uri.parse("geo:${spot.lat},${spot.lon}?q=${spot.lat},${spot.lon}(${URLEncoder.encode(spot.name, "UTF-8")})")
+                        try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lon}")))
+                        }
+                    }) { Text("Directions") }
+                }
             }
         }
     }

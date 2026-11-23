@@ -283,7 +283,9 @@ fun FavoritesScreen() {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(enabled = lat != null && lon != null, onClick = {
                             val uri = Uri.parse("geo:$lat,$lon?q=$lat,$lon")
-                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lon")))
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lon")))
+                        }
                         }) { Text("Directions") }
                         OutlinedButton(onClick = { val set = prefs.getStringSet("spots", emptySet())?.toMutableSet() ?: mutableSetOf(); set.remove(key); prefs.edit().putStringSet("spots", set).apply(); tick++ }) { Text("Remove") }
                     }
@@ -314,12 +316,12 @@ fun TidesScreen(location: Location?, latText: String, lonText: String, setLat: (
                 loading = true; status = "Loading tide predictions…"; data = ""
                 scope.launch {
                     try {
-                        val result = withContext(Dispatchers.IO) { getJson("https://www.worldtides.info/api/v3?extremes& lat=${lat}&lon=${lon}&key=${URLEncoder.encode(apiKey, "UTF-8")}".replace(" ", "")) }
+                        val result = withContext(Dispatchers.IO) { getJson("https://www.worldtides.info/api/v3?extremes&lat=${lat}&lon=${lon}&key=${URLEncoder.encode(apiKey, "UTF-8")}") }
                         val extremes = result.optJSONArray("extremes") ?: JSONArray()
                         val fmt = SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault())
                         data = (0 until extremes.length()).joinToString("\n") { i ->
                             val e = extremes.getJSONObject(i); val date = fmt.format(Date(e.optLong("dt") * 1000))
-                            "${e.optString("type")} — $date — ${e.optDouble(" hoogte", e.optDouble("height"))} m".replace("hoogte", "height")
+                            "${e.optString("type")} — $date — ${e.optDouble("height")} m"
                         }
                         status = if (data.isBlank()) "No tide extremes returned for this location." else "Predicted tide extremes"
                         if (result.has("error")) status = result.optString("error")

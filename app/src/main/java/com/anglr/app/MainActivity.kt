@@ -97,7 +97,7 @@ fun AnglrHome(locationGranted: Boolean, askLocation: () -> Unit) {
                         Spacer(Modifier.height(10.dp))
                         FeatureCard(Icons.Default.Place, "Find fishing spots", "Piers, beaches, estuaries and boat access nearby", "Explore spots")
                         FeatureCard(Icons.Default.Tsunami, "Tides & conditions", "Tide times, wind, swell, rain and water conditions", "Conditions")
-                        FeatureCard(Icons.Default.Fishing, "Tackle & rig guide", "Species-specific setups, bait, lures and knots", "Rig up")
+                        FeatureCard(Icons.Default.SetMeal, "Tackle & rig guide", "Species-specific setups, bait, lures and knots", "Rig up")
                         FeatureCard(Icons.Default.Article, "Local fishing reports", "Recent reports and bite updates from multiple sources", "Reports")
                         Spacer(Modifier.height(8.dp))
                         Card(colors = CardDefaults.cardColors(containerColor = Navy), shape = RoundedCornerShape(18.dp)) {

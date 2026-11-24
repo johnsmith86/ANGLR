@@ -20,3 +20,5 @@ Open **Actions → Android APK build → latest run → Artifacts** to download 
 6. Offline saved spots and trip notes
 
 The current snapshot labels are UI placeholders, not live forecasts. Connect data providers before using the app for real-time fishing decisions.
+
+Latest Android build includes GPS-based nearby spot search and encrypted WorldTides key setup.

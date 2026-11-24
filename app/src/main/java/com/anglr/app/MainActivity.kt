@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.json.JSONArray
-import java.net.HttpURLConnection
+import android.util.Base64\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\nimport javax.crypto.spec.SecretKeySpec\nimport java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
@@ -331,7 +331,7 @@ fun FavoritesScreen() {
 @Composable
 fun TidesScreen(location: Location?, latText: String, lonText: String, setLat: (String)->Unit, setLon: (String)->Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    var apiKey by remember { mutableStateOf(context.getSharedPreferences("anglr", Context.MODE_PRIVATE).getString("worldtides_key", "") ?: "") }
+    var apiKey by remember { mutableStateOf(loadWorldTidesKey(context)) }
     var data by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("Tide predictions need a WorldTides API key.") }
     var loading by remember { mutableStateOf(false) }
@@ -342,7 +342,7 @@ fun TidesScreen(location: Location?, latText: String, lonText: String, setLat: (
         Panel {
             Text("TIDE DATA CONNECTION", fontWeight = FontWeight.Bold, color = Ink)
             Text("Connect your WorldTides API key to retrieve real tide predictions. No sample tide times are displayed as live data.", color = Color.Gray)
-            OutlinedTextField(apiKey, { apiKey = it; context.getSharedPreferences("anglr", Context.MODE_PRIVATE).edit().putString("worldtides_key", it).apply() }, label = { Text("WorldTides API key") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(apiKey, { apiKey = it; saveWorldTidesKey(context, it) }, label = { Text("WorldTides API key") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lat?.toString() ?: "", setLat, label = { Text("Latitude") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lon?.toString() ?: "", setLon, label = { Text("Longitude") }, modifier = Modifier.fillMaxWidth())
             Button(enabled = apiKey.isNotBlank() && lat != null && lon != null && !loading, onClick = {

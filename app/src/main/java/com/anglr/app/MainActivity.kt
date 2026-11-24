@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
             override fun onProviderDisabled(provider: String) {}
         }
         try {
-            providers.forEach { manager.requestLocationUpdates(it, 0L, 0f, listener, mainLooper) }
+            providers.forEach { manager.requestLocationUpdates(it, 0L, 0f, listener) }
             currentLocation = readLocation()
         } catch (_: Exception) { currentLocation = readLocation() }
     }

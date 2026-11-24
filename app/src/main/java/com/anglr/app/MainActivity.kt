@@ -65,6 +65,31 @@ class MainActivity : ComponentActivity() {
             }.maxByOrNull { it.time }
         } catch (_: Exception) { null }
     }
+    private fun requestFreshLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestLocation.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)); return
+        }
+        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter {
+            try { manager.isProviderEnabled(it) } catch (_: Exception) { false }
+        }
+        if (providers.isEmpty()) { currentLocation = readLocation(); return }
+        var received = false
+        val listener = object : android.location.LocationListener {
+            override fun onLocationChanged(loc: Location) {
+                if (!received) { received = true; currentLocation = loc; try { manager.removeUpdates(this) } catch (_: Exception) {} }
+            }
+            @Deprecated("Deprecated")
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+            override fun onProviderEnabled(provider: String) {}
+            override fun onProviderDisabled(provider: String) {}
+        }
+        try {
+            providers.forEach { manager.requestLocationUpdates(it, 0L, 0f, listener, mainLooper) }
+            currentLocation = readLocation()
+        } catch (_: Exception) { currentLocation = readLocation() }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         locationGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -73,8 +98,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(colorScheme = lightColorScheme(primary = Sea, secondary = Aqua, background = Sand)) {
                 AnglrApp(location = currentLocation, hasLocation = locationGranted,
-                    askLocation = { requestLocation.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) },
-                    refreshLocation = { currentLocation = readLocation() })
+                    askLocation = { requestFreshLocation() },
+                    refreshLocation = { requestFreshLocation() })
             }
         }
     }
@@ -202,20 +227,27 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
     var favoritesTick by remember { mutableIntStateOf(0) }
     val lat = latText.toDoubleOrNull()
     val lon = lonText.toDoubleOrNull()
-    Page("Fishing spots", "Nearby piers, boat ramps, beaches and fishing access") {
+    Page("Fishing spots", "Automatically use your GPS to find mapped fishing access") {
         Panel {
-            OutlinedTextField(latText, setLat, label = { Text("Latitude") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(lonText, setLon, label = { Text("Longitude") }, modifier = Modifier.fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = askLocation) { Text("Use GPS") }
-                Button(enabled = lat != null && lon != null && !loading, onClick = {
-                    loading = true; status = "Searching OpenStreetMap…"
-                    scope.launch {
-                        try { spots = withContext(Dispatchers.IO) { fetchSpots(lat!!, lon!!) }; status = if (spots.isEmpty()) "No mapped fishing access found nearby. Try a wider area." else "Found ${spots.size} mapped places." }
-                        catch (e: Exception) { status = "Could not load spots: ${e.message}" }
-                        loading = false
-                    }
-                }) { Text(if (loading) "Searching…" else "Find nearby") }
+            if (location == null) {
+                Text("Location needed", fontWeight = FontWeight.Bold, color = Ink)
+                Text("Allow location access and refresh GPS to search around you.", color = Color.Gray)
+                Button(onClick = askLocation) { Text("Enable / refresh GPS") }
+            } else {
+                Text("SEARCH CENTRE", fontWeight = FontWeight.Bold, color = Ink)
+                Text("%.5f, %.5f".format(Locale.US, location.latitude, location.longitude), color = Ink)
+                Text("Search radius: 30 km · OpenStreetMap community data", color = Color.Gray)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = askLocation) { Text("Refresh GPS") }
+                    Button(enabled = !loading, onClick = {
+                        loading = true; status = "Searching OpenStreetMap…"
+                        scope.launch {
+                            try { spots = withContext(Dispatchers.IO) { fetchSpots(location.latitude, location.longitude) }; status = if (spots.isEmpty()) "No mapped fishing access found within 30 km. Try again later or check the map." else "Found ${spots.size} mapped places within 30 km."
+                            catch (e: Exception) { status = "Could not load spots: ${e.message}" }
+                            loading = false
+                        }
+                    }) { Text(if (loading) "Searching…" else "Find nearby spots") }
+                }
             }
         }
         Panel { Text(status, color = Ink) }
@@ -245,9 +277,10 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
     }
 }
 fun fetchSpots(lat: Double, lon: Double): List<Spot> {
-    val query = "[out:json][timeout:20];(node(around:15000,$lat,$lon)[leisure=fishing];way(around:15000,$lat,$lon)[leisure=fishing];node(around:15000,$lat,$lon)[man_made=pier];way(around:15000,$lat,$lon)[man_made=pier];node(around:15000,$lat,$lon)[leisure=slipway];way(around:15000,$lat,$lon)[leisure=slipway];);out center tags;"
+    val radius = 30000
+    val query = "[out:json][timeout:25];(node(around:$radius,$lat,$lon)[leisure=fishing];way(around:$radius,$lat,$lon)[leisure=fishing];relation(around:$radius,$lat,$lon)[leisure=fishing];node(around:$radius,$lat,$lon)[man_made=pier];way(around:$radius,$lat,$lon)[man_made=pier];node(around:$radius,$lat,$lon)[leisure=slipway];way(around:$radius,$lat,$lon)[leisure=slipway];node(around:$radius,$lat,$lon)[amenity=fishing];way(around:$radius,$lat,$lon)[amenity=fishing];node(around:$radius,$lat,$lon)[sport=fishing];way(around:$radius,$lat,$lon)[sport=fishing];node(around:$radius,$lat,$lon)[waterway=boat_ramp];way(around:$radius,$lat,$lon)[waterway=boat_ramp];node(around:$radius,$lat,$lon)[leisure=marina];way(around:$radius,$lat,$lon)[leisure=marina];);out center tags;"
     val encoded = java.net.URLEncoder.encode(query, "UTF-8")
-    val json = getJson("https://overpass-api.de/api/interpreter?data=$encoded")
+    val json = try { getJson("https://overpass-api.de/api/interpreter?data=$encoded") } catch (_: Exception) { getJson("https://overpass.kumi.systems/api/interpreter?data=$encoded") }
     val elements = json.optJSONArray("elements") ?: JSONArray()
     val result = mutableListOf<Spot>()
     for (i in 0 until elements.length()) {
@@ -401,13 +434,24 @@ fun GuideScreen() {
 
 @Composable
 fun ReportsScreen() {
-    Page("Fishing reports", "Regional catch intelligence") {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Page("Fishing reports", "Open regional reports from established fishing communities") {
         Panel {
-            Text("Report feed connection", fontWeight = FontWeight.Bold, color = Ink)
-            Text("A verified multi-source report feed is not connected yet. ANGLR does not fabricate recent catches or label old reports as current.", color = Color.Gray)
-            Text("Planned sources: public fishing club reports, official fisheries updates, community submissions and licensed report providers. Each report should show source, location and publication time.", color = Ink)
+            Text("Live report sources", fontWeight = FontWeight.Bold, color = Ink)
+            Text("These links open the source websites directly. ANGLR does not claim to have aggregated or verified their reports inside the app.", color = Color.Gray)
+            val sources = listOf(
+                "Fishing Victoria — regional community reports" to "https://www.fishing-victoria.com/",
+                "FishingMad — Melbourne & Victoria reports" to "https://fishingmad.com.au/reports/",
+                "Victorian Fisheries Authority — fishing information" to "https://www.vfa.vic.gov.au/"
+            )
+            sources.forEach { (label, url) ->
+                OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }, modifier = Modifier.fillMaxWidth()) { Text(label) }
+            }
         }
-        Panel { Text("Community reports", fontWeight = FontWeight.Bold, color = Ink); Text("Report submission and moderation are planned for the next integration stage.", color = Color.Gray) }
+        Panel {
+            Text("Local fishing log", fontWeight = FontWeight.Bold, color = Ink)
+            Text("Save your own catch notes on this device from the Notes app for now. An online community feed and report moderation still require a backend service.", color = Color.Gray)
+        }
     }
 }
 

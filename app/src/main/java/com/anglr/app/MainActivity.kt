@@ -24,7 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -341,8 +341,8 @@ fun TidesScreen(location: Location?, latText: String, lonText: String, setLat: (
     Page("Tides", "Predicted high and low water for your selected location") {
         Panel {
             Text("TIDE DATA CONNECTION", fontWeight = FontWeight.Bold, color = Ink)
-            Text("Connect your WorldTides API key to retrieve real tide predictions. No sample tide times are displayed as live data.", color = Color.Gray)
-            OutlinedTextField(apiKey, { apiKey = it; saveWorldTidesKey(context, it) }, label = { Text("WorldTides API key") }, modifier = Modifier.fillMaxWidth())
+            Text("Create a WorldTides API key and paste it below. ANGLR stores the key encrypted with Android Keystore on this device; it is not embedded in the app or repository.", color = Color.Gray)\n            OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.worldtides.info/"))) }) { Text("Get a WorldTides API key") }
+            OutlinedTextField(apiKey, { apiKey = it; saveWorldTidesKey(context, it) }, label = { Text("WorldTides API key") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lat?.toString() ?: "", setLat, label = { Text("Latitude") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lon?.toString() ?: "", setLon, label = { Text("Longitude") }, modifier = Modifier.fillMaxWidth())
             Button(enabled = apiKey.isNotBlank() && lat != null && lon != null && !loading, onClick = {

@@ -250,14 +250,12 @@ fun moonPhase(date: Date): Pair<String, String> {
 @Composable
 fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (String)->Unit, setLon: (String)->Unit, askLocation: ()->Unit) {
     var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
-    var status by remember { mutableStateOf("Enter coordinates or enable GPS, then search.") }
+    var status by remember { mutableStateOf("Enable GPS, then search nearby.") }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
     val favorites = remember { context.getSharedPreferences("anglr_favorites", Context.MODE_PRIVATE) }
     var favoritesTick by remember { mutableIntStateOf(0) }
-    val lat = latText.toDoubleOrNull()
-    val lon = lonText.toDoubleOrNull()
     Page("Fishing spots", "GPS-powered nearby piers, ramps and fishing access") {
         Panel {
             if (location == null) {
@@ -269,13 +267,19 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = askLocation) { Text("Refresh GPS") }
                     Button(enabled = !loading, onClick = {
-                    loading = true; status = "Searching OpenStreetMap…"
-                    scope.launch {
-                        try { spots = withContext(Dispatchers.IO) { fetchSpots(lat!!, lon!!) }; status = if (spots.isEmpty()) "No mapped fishing access found nearby. Try a wider area." else "Found ${spots.size} mapped places." }
-                        catch (e: Exception) { status = "Could not load spots: ${e.message}" }
-                        loading = false
-                    }
-                }) { Text(if (loading) "Searching…" else "Find nearby") }
+                        loading = true
+                        status = "Searching OpenStreetMap…"
+                        scope.launch {
+                            try {
+                                spots = withContext(Dispatchers.IO) { fetchSpots(location.latitude, location.longitude) }
+                                status = if (spots.isEmpty()) "No mapped fishing access found within 30 km." else "Found ${spots.size} mapped places."
+                            } catch (e: Exception) {
+                                status = "Could not load spots: ${e.message}"
+                            }
+                            loading = false
+                        }
+                    }) { Text(if (loading) "Searching…" else "Find nearby spots") }
+                }
             }
         }
         Panel { Text(status, color = Ink) }
@@ -286,12 +290,13 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
                 Text("%.1f km away".format(Locale.getDefault(), spot.distance / 1000.0), color = Color.Gray)
                 Text("%.5f, %.5f".format(Locale.US, spot.lat, spot.lon), color = Color.Gray)
                 val favoriteKey = "${spot.name}|${spot.lat}|${spot.lon}"
-                val saved = favoritesTick >= 0 && favorites.getStringSet("spots", emptySet())?.contains(favoriteKey) == true
+                val saved = favorites.getStringSet("spots", emptySet())?.contains(favoriteKey) == true
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = {
                         val current = favorites.getStringSet("spots", emptySet())?.toMutableSet() ?: mutableSetOf()
                         if (saved) current.remove(favoriteKey) else current.add(favoriteKey)
                         favorites.edit().putStringSet("spots", current).apply()
+                        favoritesTick++
                     }) { Text(if (saved) "★ Saved" else "☆ Save spot") }
                     Button(onClick = {
                         val uri = Uri.parse("geo:${spot.lat},${spot.lon}?q=${spot.lat},${spot.lon}(${URLEncoder.encode(spot.name, "UTF-8")})")
@@ -304,6 +309,7 @@ fun SpotsScreen(location: Location?, latText: String, lonText: String, setLat: (
         }
     }
 }
+
 fun fetchSpots(lat: Double, lon: Double): List<Spot> {
     val radius = 30000
     val query = "[out:json][timeout:25];(node(around:$radius,$lat,$lon)[leisure=fishing];way(around:$radius,$lat,$lon)[leisure=fishing];node(around:$radius,$lat,$lon)[man_made=pier];way(around:$radius,$lat,$lon)[man_made=pier];node(around:$radius,$lat,$lon)[leisure=slipway];way(around:$radius,$lat,$lon)[leisure=slipway];node(around:$radius,$lat,$lon)[amenity=fishing];way(around:$radius,$lat,$lon)[amenity=fishing];node(around:$radius,$lat,$lon)[sport=fishing];way(around:$radius,$lat,$lon)[sport=fishing];node(around:$radius,$lat,$lon)[waterway=boat_ramp];way(around:$radius,$lat,$lon)[waterway=boat_ramp];node(around:$radius,$lat,$lon)[leisure=marina];way(around:$radius,$lat,$lon)[leisure=marina];);out center tags;"

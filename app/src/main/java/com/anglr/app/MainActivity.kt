@@ -24,7 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.json.JSONArray
-import android.util.Base64\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\nimport javax.crypto.spec.SecretKeySpec\nimport java.net.HttpURLConnection
+import android.util.Base64
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
@@ -341,7 +348,8 @@ fun TidesScreen(location: Location?, latText: String, lonText: String, setLat: (
     Page("Tides", "Predicted high and low water for your selected location") {
         Panel {
             Text("TIDE DATA CONNECTION", fontWeight = FontWeight.Bold, color = Ink)
-            Text("Create a WorldTides API key and paste it below. ANGLR stores the key encrypted with Android Keystore on this device; it is not embedded in the app or repository.", color = Color.Gray)\n            OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.worldtides.info/"))) }) { Text("Get a WorldTides API key") }
+            Text("Create a WorldTides API key and paste it below. ANGLR stores the key encrypted with Android Keystore on this device; it is not embedded in the app or repository.", color = Color.Gray)
+            OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.worldtides.info/"))) }) { Text("Get a WorldTides API key") }
             OutlinedTextField(apiKey, { apiKey = it; saveWorldTidesKey(context, it) }, label = { Text("WorldTides API key") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lat?.toString() ?: "", setLat, label = { Text("Latitude") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(lon?.toString() ?: "", setLon, label = { Text("Longitude") }, modifier = Modifier.fillMaxWidth())
